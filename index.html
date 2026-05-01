@@ -1,0 +1,422 @@
+<!doctype html>
+<!--
+  MERIT — Decentralized Instruction Tuning
+  Copyright (c) 2026-present NAVER Cloud Corp.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MERIT · Decentralized Instruction Tuning</title>
+<meta name="description" content="MERIT: a decentralized instruction-tuning pipeline that splits heterogeneous datasets via gradient-space PCA and merges once via token-weighted averaging.">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    color: #1a1a1a;
+    background: #ffffff;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: #0d4f4c; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  sup { font-size: 0.72em; }
+
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 1.25rem; }
+
+  /* Hero ---------------------------------------------------------- */
+  .hero {
+    padding: 3rem 0 1.6rem;
+    text-align: center;
+    border-bottom: 1px solid #e8e6e2;
+  }
+  .hero h1 {
+    margin: 0 0 0.45rem;
+    font-size: 2.3rem;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    line-height: 1.18;
+  }
+  .hero .subtitle {
+    margin: 0 0 1.4rem;
+    font-size: 1.1rem;
+    color: #5a5a5a;
+    font-weight: 500;
+  }
+  .authors {
+    margin: 0 0 0.35rem;
+    font-size: 1.02rem;
+  }
+  .authors .author { display: inline-block; margin: 0 0.45rem; }
+  .affil {
+    margin: 0 0 0.2rem;
+    font-size: 0.92rem;
+    color: #5a5a5a;
+  }
+  .affil .item { display: inline-block; margin: 0 0.4rem; }
+  .note {
+    margin: 0.2rem 0 0.7rem;
+    font-size: 0.8rem;
+    color: #7a7a7a;
+  }
+  .venue {
+    margin: 0.2rem 0 1.2rem;
+    font-size: 0.9rem;
+    color: #0d4f4c;
+    font-style: italic;
+    letter-spacing: 0.005em;
+  }
+  .hook {
+    padding: 1.6rem 0 1.8rem;
+    border-bottom: 1px solid #e8e6e2;
+  }
+  .hook .hook-line {
+    text-align: center;
+    margin: 0 0 1.1rem;
+    font-size: 0.95rem;
+    color: #5a5a5a;
+    font-style: italic;
+  }
+  .actions {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+  .actions a {
+    color: #0d4f4c;
+    font-weight: 500;
+    margin: 0 0.35rem;
+  }
+  .actions a:hover { text-decoration: underline; }
+  .actions .sep { color: #c7c5c0; font-weight: 300; }
+
+  /* Sections ------------------------------------------------------ */
+  section { padding: 2.7rem 0; border-bottom: 1px solid #e8e6e2; }
+  section:last-of-type { border-bottom: 0; }
+  section h2 {
+    margin: 0 0 1.3rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.012em;
+  }
+  section p { margin: 0 0 0.95rem; }
+
+  .tldr {
+    background: #fafaf7;
+    border-left: 3px solid #0d4f4c;
+    padding: 0.9rem 1.15rem;
+    border-radius: 3px;
+    margin-bottom: 1.15rem;
+  }
+  .tldr b { color: #0d4f4c; }
+
+  /* Figures ------------------------------------------------------- */
+  figure {
+    margin: 0;
+    padding: 0.8rem;
+    border: 1px solid #e8e6e2;
+    border-radius: 6px;
+    background: #ffffff;
+  }
+  figure img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 3px;
+  }
+  figure figcaption {
+    margin-top: 0.7rem;
+    font-size: 0.84rem;
+    color: #5a5a5a;
+    line-height: 1.55;
+  }
+  figure figcaption b { color: #1a1a1a; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; }
+  .fig-wide { margin-top: 1.2rem; }
+
+  /* Method steps -------------------------------------------------- */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.65rem;
+    margin-bottom: 1rem;
+  }
+  .step {
+    padding: 0.85rem 0.8rem;
+    border: 1px solid #e8e6e2;
+    border-radius: 6px;
+    background: #ffffff;
+  }
+  .step .n {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #0d4f4c;
+    letter-spacing: 0.14em;
+  }
+  .step .t {
+    margin: 0.3rem 0;
+    font-size: 0.94rem;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+  .step .b {
+    font-size: 0.79rem;
+    color: #5a5a5a;
+    line-height: 1.5;
+  }
+
+  /* Results table ------------------------------------------------- */
+  .tbl-wrap { overflow-x: auto; }
+  table.results {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  table.results th,
+  table.results td {
+    padding: 0.55rem 0.7rem;
+    text-align: right;
+    border-bottom: 1px solid #e8e6e2;
+  }
+  table.results th {
+    background: #fafaf7;
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #5a5a5a;
+    font-weight: 600;
+    border-bottom: 2px solid #d8d6d0;
+  }
+  table.results th:first-child,
+  table.results td:first-child {
+    text-align: left;
+  }
+  table.results tr.hl td {
+    background: #eef4f3;
+    color: #0d4f4c;
+    font-weight: 700;
+  }
+  .caption {
+    margin-top: 0.55rem;
+    font-size: 0.78rem;
+    color: #7a7a7a;
+    text-align: center;
+  }
+
+  /* BibTeX -------------------------------------------------------- */
+  pre.bib {
+    background: #fafaf7;
+    border: 1px solid #e8e6e2;
+    border-radius: 6px;
+    padding: 1rem 1.1rem;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    overflow-x: auto;
+    margin: 0;
+  }
+
+  /* Footer -------------------------------------------------------- */
+  footer {
+    padding: 2rem 0 2.8rem;
+    text-align: center;
+    font-size: 0.83rem;
+    color: #7a7a7a;
+  }
+
+  /* Responsive ---------------------------------------------------- */
+  @media (max-width: 720px) {
+    .hero { padding: 2.6rem 0 2rem; }
+    .hero h1 { font-size: 1.85rem; }
+    .hero .subtitle { font-size: 1rem; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>Decentralized Instruction Tuning</h1>
+    <p class="subtitle">Conflict-Aware Splitting and Weight Merging</p>
+
+    <p class="authors">
+      <span class="author"><a href="https://github.com/minsik-choi126">Minsik Choi</a><sup>1,2,*</sup></span>
+      <span class="author"><a href="https://geewook.kim/">Geewook Kim</a><sup>1,3,*,&dagger;</sup></span>
+    </p>
+    <p class="affil">
+      <span class="item"><sup>1</sup>NAVER Cloud AI</span>
+      <span class="item"><sup>2</sup>Korea University</span>
+      <span class="item"><sup>3</sup>KAIST AI</span>
+    </p>
+    <p class="note"><sup>*</sup>Equal contribution &nbsp;·&nbsp; <sup>&dagger;</sup>Corresponding author</p>
+
+    <p class="venue">To appear at ICML 2026</p>
+
+    <p class="actions">
+      <a href="https://github.com/naver-ai/merit">Code</a><span class="sep">·</span><a href="#bibtex">BibTeX</a>
+    </p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="hook">
+    <p class="hook-line">Dataset-level gradients form sharp directional clusters &mdash; heterogeneity is structured, not noise.</p>
+    <div class="grid-2">
+      <figure>
+        <img src="images/tsne.png" alt="t-SNE of dataset-level gradients">
+        <figcaption>
+          <b>t-SNE of dataset-level gradients</b> across 136 Vision-FLAN tasks. Distinct clusters
+          emerge along instruction type &mdash; a signal MERIT exploits via PCA.
+        </figcaption>
+      </figure>
+      <figure>
+        <img src="images/pca_group.png" alt="PCA-based groups">
+        <figcaption>
+          <b>PCA-based groups</b> extend along conflicting directions from &theta;<sup>0</sup>,
+          while the merged model re-centers &mdash; aggregating complementary updates rather
+          than averaging noise.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <p class="tldr">
+      <b>TL;DR.</b> Split a heterogeneous mixture along top PCA axes of dataset-level gradient
+      conflict, train each branch independently, merge once. Improves the 8-benchmark multimodal
+      average from <b>54.3 &rarr; 57.0</b> (~5% relative) on Qwen2.5-VL-3B with 136 Vision-FLAN
+      tasks, while eliminating step-level gradient synchronization.
+    </p>
+    <p>
+      Instruction tuning large multimodal models on heterogeneous mixtures is bottlenecked by
+      gradient interference and bandwidth-heavy synchronization. We develop a local quadratic
+      theory inside a shared flat basin showing that merging is never worse than the weighted
+      average of individual losses, with improvement governed by curvature-weighted variance;
+      that conflict-aware PCA splitting maximizes the merging gain along high-curvature
+      directions; and that merging acts as curvature-weighted spectral filtering with implicit
+      norm regularization. These implications motivate <b>MERIT</b>, a decentralized merge-ready
+      instruction-tuning pipeline that estimates dataset-level gradient conflicts, extracts
+      dominant conflict axes via PCA, partitions datasets accordingly, fine-tunes each partition
+      independently with no inter-partition communication, and merges once via token-weighted
+      averaging.
+    </p>
+  </section>
+
+  <section>
+    <h2>Method</h2>
+    <p>A five-step pipeline that happens <em>once</em> around a merge-ready initialization &theta;<sup>0</sup>.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="n">01</div><div class="t">Merge-ready init</div>
+        <div class="b">LLaVA Stage 1 &rarr; Stage 2 produce &theta;<sup>0</sup> whose neighborhood forms a shared flat basin.</div>
+      </div>
+      <div class="step">
+        <div class="n">02</div><div class="t">Gradient conflicts</div>
+        <div class="b">Per-dataset mean gradients on a small calibration set (n=200) with stride-s subsampling.</div>
+      </div>
+      <div class="step">
+        <div class="n">03</div><div class="t">PCA split</div>
+        <div class="b">Cosine similarity matrix &rarr; top-r eigenvectors &rarr; token-weighted median split into K=2<sup>r</sup> groups.</div>
+      </div>
+      <div class="step">
+        <div class="n">04</div><div class="t">Branch training</div>
+        <div class="b">Fine-tune K branches independently from &theta;<sup>0</sup> &mdash; zero cross-branch communication.</div>
+      </div>
+      <div class="step">
+        <div class="n">05</div><div class="t">Token-weighted merge</div>
+        <div class="b">&theta;&#772; = &Sigma;<sub>k</sub> (n<sub>k</sub> / &Sigma;<sub>j</sub> n<sub>j</sub>) &middot; &theta;<sub>k</sub>. One-shot averaging, no retraining.</div>
+      </div>
+    </div>
+    <figure class="fig-wide">
+      <img src="images/flat_basin.png" alt="Flat-basin geometry">
+      <figcaption>
+        <b>Flat-basin geometry of the merge-ready initialization.</b> Branches fine-tuned from
+        &theta;<sup>0</sup> remain in a single connected low-loss region (verified via linear
+        mode connectivity &mdash; 10/10 barriers exactly zero). Merging realizes
+        curvature-weighted variance reduction and implicit norm regularization.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Results</h2>
+    <p>Controlled 3B study on 136 Vision-FLAN tasks + 7B scaling on a 176-source 1.6 M mixture + text-only generalization on 66 FLAN tasks.</p>
+    <div class="tbl-wrap">
+      <table class="results">
+        <thead>
+          <tr>
+            <th>Method</th><th>Seed</th><th>LLaVA-W</th><th>MMVet</th><th>TextVQA</th>
+            <th>AI2D</th><th>MathVista</th><th>MMMU</th><th>Avg.</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Joint (1 ep)</td><td>69.2</td><td>41.9</td><td>36.4</td><td>68.0</td><td>62.6</td><td>34.2</td><td>41.9</td><td>54.3</td></tr>
+          <tr><td>Joint (2 ep)</td><td>70.0</td><td>42.8</td><td>37.6</td><td>63.4</td><td>62.5</td><td>36.5</td><td>43.0</td><td>54.7</td></tr>
+          <tr><td>Random-8</td><td>69.5</td><td>42.2</td><td>35.0</td><td>73.7</td><td>61.7</td><td>33.5</td><td>40.5</td><td>54.5</td></tr>
+          <tr><td>MERIT-1D</td><td>71.0</td><td>43.1</td><td>35.0</td><td>72.4</td><td>62.1</td><td>36.5</td><td>41.4</td><td>55.2</td></tr>
+          <tr><td>MERIT-2D</td><td>70.8</td><td>47.4</td><td>36.6</td><td>74.1</td><td>61.5</td><td>36.0</td><td>40.7</td><td>55.7</td></tr>
+          <tr class="hl"><td>MERIT-3D</td><td>70.5</td><td>52.0</td><td>37.7</td><td>75.2</td><td>62.5</td><td>35.4</td><td>42.7</td><td><b>57.0</b></td></tr>
+        </tbody>
+      </table>
+      <p class="caption">8-benchmark average on Qwen2.5-VL-3B, 5-seed primary comparison.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Analysis</h2>
+    <p>Three empirical checks that the theory&rsquo;s assumptions hold in practice.</p>
+    <div class="grid-3">
+      <figure>
+        <img src="images/hessian_alignment.png" alt="Hessian-PCA alignment">
+        <figcaption>
+          <b>Hessian&ndash;PCA alignment.</b> PCA conflict directions reach |cos|=0.133 with top-10
+          Hessian eigenvectors (z &asymp; 4,000), vs. 5.6&times;10<sup>&minus;5</sup> for random
+          unit vectors &mdash; the split targets high-curvature subspaces exactly as predicted.
+        </figcaption>
+      </figure>
+      <figure>
+        <img src="images/calibration.png" alt="Calibration size sensitivity">
+        <figcaption>
+          <b>Calibration stability.</b> Mean cosine similarity to a full 1,000-sample reference
+          gradient saturates around n = 200 across 100 Vision-FLAN tasks (0.847 &plusmn; 0.106)
+          &mdash; small calibration is sufficient.
+        </figcaption>
+      </figure>
+      <figure>
+        <img src="images/lr_sweep.png" alt="SGD learning-rate sweep">
+        <figcaption>
+          <b>Robustness across optimizers.</b> Under an SGD learning-rate sweep MERIT matches or
+          exceeds joint training across the practical range (&eta; &ge; 8&times;10<sup>&minus;5</sup>),
+          mirroring the condition-number reduction derived from the theory.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="bibtex">
+    <h2>BibTeX</h2>
+<pre class="bib">@inproceedings{merit,
+  title     = {Decentralized Instruction Tuning: Conflict-Aware Splitting
+               and Weight Merging},
+  author    = {Choi, Minsik and Kim, Geewook},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year      = {2026},
+  note      = {To appear}
+}</pre>
+  </section>
+
+  <footer>
+    <p><a href="https://github.com/naver-ai/merit">github.com/naver-ai/merit</a></p>
+  </footer>
+
+</div>
+
+</body>
+</html>
