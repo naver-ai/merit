@@ -8,15 +8,16 @@
 **Conflict-Aware Splitting and Weight Merging**
 *To appear at ICML 2026.*
 
-[Project page](https://naver-ai.github.io/merit/)
+[Project page](https://naver-ai.github.io/merit/) &nbsp;·&nbsp;
+[Poster (PDF)](https://raw.githubusercontent.com/naver-ai/merit/gh-pages/assets/MERIT_Poster_ICML2026.pdf)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/naver-ai/merit/gh-pages/images/tsne.png" width="48%" alt="t-SNE of dataset-level gradients" />
-  <img src="https://raw.githubusercontent.com/naver-ai/merit/gh-pages/images/pca_group.png" width="48%" alt="PCA-based groups" />
+  <img src="https://raw.githubusercontent.com/naver-ai/merit/gh-pages/images/teaser.png" width="92%" alt="MERIT pipeline: centralized joint training vs MERIT" />
 </p>
 
 <p align="center">
-  <em>Dataset-level gradients form sharp directional clusters &mdash; heterogeneity is structured, not noise.</em>
+  <em>Centralized joint training (top) synchronizes conflicting tasks across a tightly-coupled cluster.<br>
+  MERIT (bottom) partitions the mixture by conflict, fine-tunes each group independently, and merges once into <strong>&theta;&#773;</strong>.</em>
 </p>
 
 ---
@@ -40,6 +41,15 @@ maximizes that gain.
 - **0.8% wall-clock overhead** at 7B scale on a 176-source 1.6 M mixture.
 - **Zero step-level synchronization** &mdash; branches train fully independently.
 - **One-shot merge.** Token-weighted averaging, no retraining, no calibration after the fact.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/naver-ai/merit/gh-pages/images/tsne.png" width="48%" alt="t-SNE of dataset-level gradients" />
+  <img src="https://raw.githubusercontent.com/naver-ai/merit/gh-pages/images/pca_group.png" width="48%" alt="PCA-based groups" />
+</p>
+
+<p align="center">
+  <em>Dataset-level gradients form sharp directional clusters &mdash; heterogeneity is structured, not noise.</em>
+</p>
 
 ## Status
 
